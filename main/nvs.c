@@ -24,6 +24,8 @@
 #include "esp_partition.h"
 #include "esp_log.h"
 
+#include "spi_flash_mmap.h" // SPI_FLASH_SEC_SIZE
+
 #include "nvs.h"
 #include "grbl/hal.h"
 

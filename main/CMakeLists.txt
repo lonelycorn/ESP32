@@ -18,7 +18,7 @@ OPTION(BOARD_CNC3040 "Compile for CNC3040 controller" OFF)
 OPTION(BOARD_ROOTCNC_V2 "Compile for RootCNC v2.x controller" OFF)
 OPTION(BOARD_ROOTCNC_V3 "Compile for RootCNC v3 controller" OFF)
 OPTION(BOARD_CNC_BOOSTERPACK "Compile for CNC BoosterPack" OFF)
-OPTION(BOARD_MY_MACHINE "Compile for my_machine_map.h" OFF)
+OPTION(BOARD_MY_MACHINE "Compile for my_machine_map.h" ON)
 
 OPTION(X_AXIS_GANGED "Compile with ganged X axis" OFF)
 OPTION(X_AXIS_SQUARED "Compile with auto-squared X axis" OFF)
@@ -29,7 +29,7 @@ OPTION(Z_AXIS_SQUARED "Compile with auto-squared Z axis" OFF)
 
 # Driver options
 OPTION(NOPROBE "Compile without probe support" OFF)
-OPTION(SafetyDoor "Safety door enable" OFF)
+OPTION(SafetyDoor "Safety door enable" ON)
 OPTION(MPGMode "MPG mode" OFF)
 OPTION(I2SStepping "Use I2S Stepping" OFF)
 

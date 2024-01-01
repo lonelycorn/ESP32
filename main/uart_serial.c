@@ -42,6 +42,9 @@
 #include "hal/uart_ll.h"
 #include "esp_intr_alloc.h"
 
+#include "soc/interrupts.h" // ETS_UART0_INTR_SOURCE
+#include "esp_clk_tree.h" // esp_clk_tree_src_get_freq_hz
+
 #include "driver.h"
 #include "grbl/hal.h"
 #include "grbl/protocol.h"
@@ -209,8 +212,14 @@ static void uartSetBaudRate (uart_t *uart, uint32_t baud_rate)
     if(uart == NULL)
         return;
 
+
+    soc_module_clk_t sclk;
+    uart_ll_get_sclk(uart->dev, &sclk);
+    uint32_t sclk_freq;
+    esp_clk_tree_src_get_freq_hz(sclk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+
     UART_MUTEX_LOCK(uart);
-    uart_ll_set_baudrate(uart->dev, baud_rate);
+    uart_ll_set_baudrate(uart->dev, baud_rate, sclk_freq);
     UART_MUTEX_UNLOCK(uart);
 }
 
