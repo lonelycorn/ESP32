@@ -52,7 +52,6 @@
 #include "soc/timer_group_struct.h" // TIMERG0, TIMERG1
 #include "soc/gpio_reg.h" // GPIO_STATUS_REG, GPIO_STATUS1_REG, GPIO_STATUS_W1TC_REG， GPIO_STATUS1_W1TC_REG
 
-//#include "grbl_esp32_if/grbl_esp32_if.h"
 #include "xtensa/core-macros.h"
 
 #include "grbl/protocol.h"
