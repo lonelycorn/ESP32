@@ -19,12 +19,16 @@
   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if N_ABC_MOTORS > 0
+#if N_ABC_MOTORS > 1
 #error "Axis configuration is not supported!"
 #endif
 
 #if VFD_SPINDLE
 #error "Fystec E4 board does not have support for VFD spindle."
+#endif
+
+#if KEYPAD_ENABLE
+#error No free pins for I2C keypad!
 #endif
 
 #define BOARD_NAME "Fysetc E4 v1.0"
@@ -89,6 +93,7 @@
 #define CYCLE_START_PIN     GPIO_NUM_39
 #if SAFETY_DOOR_ENABLE
 #if !I2C_ENABLE
+#define AUXINPUT0_PIN       GPIO_NUM_22
 #define SAFETY_DOOR_PIN     GPIO_NUM_22
 #else
 #warning No free pin for safety door input!
@@ -102,10 +107,6 @@
 #else
 #warning No free pin for probe input!
 #endif
-#endif
-
-#if KEYPAD_ENABLE
-#error No free pins for keypad!
 #endif
 
 #if I2C_ENABLE

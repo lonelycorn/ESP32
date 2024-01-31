@@ -28,6 +28,14 @@
 #error "Axis configuration is not supported!"
 #endif
 
+#if KEYPAD_ENABLE == 1
+#error No free pins for I2C keypad!
+#endif
+
+#if TRINAMIC_ENABLE
+#error BlackBox X32 does not use Trinamic drivers
+#endif
+
 #define BOARD_NAME "BlackBox X32"
 #define BOARD_URL "https://docs.openbuilds.com/doku.php?id=docs:blackbox-x32:start"
 #if N_AUTO_SQUARED || N_AXIS > 3
@@ -103,14 +111,13 @@
 #define COOLANT_FLOOD_PIN   GPIO_NUM_21 // coolant
 //#define COOLANT_MIST_PIN  GPIO_NUM_21 // or mist
 
+#define AUXINPUT0_PIN       GPIO_NUM_0 // Mode button on front panel
+#define AUXINPUT1_PIN       GPIO_NUM_16
+
 // Define user-control CONTROLs (cycle start, reset, feed hold) input pins.
 #if SAFETY_DOOR_ENABLE
-  #define SAFETY_DOOR_PIN   GPIO_NUM_16
-#else
-  #define AUXINPUT1_PIN     GPIO_NUM_16
+  #define SAFETY_DOOR_PIN   AUXINPUT1_PIN
 #endif
-
-#define AUXINPUT0_PIN       GPIO_NUM_0 // Mode button on front panel
 
 // Pin mapping when using SPI mode.
 // With this mapping, SD card can be used both in SPI and 1-line SD mode.
@@ -122,15 +129,3 @@
 // #if SDCARD_ENABLE
 #define PIN_NUM_CS          GPIO_NUM_5
 // #endif
-
-#if MODBUS_ENABLE & MODBUS_RTU_ENABLED
-#error BlackBox X32 does not support Modbus
-#endif
-
-#if KEYPAD_ENABLE
-#error BlackBox X32 does not support Keypad
-#endif
-
-#if TRINAMIC_ENABLE
-#error BlackBox X32 does not use Trinamic drivers
-#endif

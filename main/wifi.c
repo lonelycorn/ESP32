@@ -5,7 +5,7 @@
 
   Part of grblHAL
 
-  Copyright (c) 2018-2023 Terje Io
+  Copyright (c) 2018-2024 Terje Io
 
   Some parts of the code is based on example code by Espressif, in the public domain
 
@@ -50,6 +50,11 @@
 #include "grbl/nvs_buffer.h"
 #include "grbl/protocol.h"
 
+typedef struct {
+    grbl_wifi_mode_t mode;
+    wifi_sta_settings_t sta;
+    wifi_ap_settings_t ap;
+} wifi_settings_t;
 
 /* The event group allows multiple bits for each event,
    but we only care about one event - are we connected
@@ -121,7 +126,7 @@ void wifi_release_aplist (void)
 
 char *iptoa (void *ip)
 {
-    static char aip[INET6_ADDRSTRLEN];
+    static char aip[INET6_ADDRSTRLEN + 20]; // + 20 due to compiler issue?
 
     inet_ntop(AF_INET, ip, aip, INET6_ADDRSTRLEN);
 
@@ -380,38 +385,13 @@ void wifi_ap_scan (void)
         xEventGroupSetBits(wifi_event_group, SCANNING_BIT);
 }
 
-static void msg_ap_ready (sys_state_t state)
+static void msg_sta_active (void *data)
 {
-    hal.stream.write_all("[MSG:WIFI AP READY]" ASCII_EOL);
-}
-
-static void msg_ap_connected (sys_state_t state)
-{
-    hal.stream.write_all("[MSG:WIFI AP CONNECTED]" ASCII_EOL);
-}
-
-static void msg_ap_scan_completed (sys_state_t state)
-{
-    hal.stream.write_all("[MSG:WIFI AP SCAN COMPLETED]" ASCII_EOL);
-}
-
-static void msg_ap_disconnected (sys_state_t state)
-{
-    hal.stream.write_all("[MSG:WIFI AP DISCONNECTED]" ASCII_EOL);
-}
-
-static void msg_sta_active (sys_state_t state)
-{
-    char buf[50];
+    char buf[50 + 45]; // + 45 due to compiler issue?
 
     sprintf(buf, "[MSG:WIFI STA ACTIVE, IP=%s]" ASCII_EOL, iptoa(&ap_list.ip_addr));
 
     hal.stream.write_all(buf);
-}
-
-static void msg_sta_disconnected (sys_state_t state)
-{
-    hal.stream.write_all("[MSG:WIFI STA DISCONNECTED]" ASCII_EOL);
 }
 
 static void ip_event_handler (void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
@@ -435,7 +415,7 @@ static void ip_event_handler (void *arg, esp_event_base_t event_base, int32_t ev
                 // commit to EEPROM?
             } else
                 wifi_ap_scan();
-            protocol_enqueue_rt_command(msg_sta_active);
+            protocol_enqueue_foreground_task(msg_sta_active, NULL);
             break;
 
         default:
@@ -448,7 +428,7 @@ static void wifi_event_handler (void *arg, esp_event_base_t event_base, int32_t 
     if(event_base == WIFI_EVENT) switch(event_id) {
 
         case WIFI_EVENT_AP_START:
-            protocol_enqueue_rt_command(msg_ap_ready);
+            protocol_enqueue_foreground_task(report_plain, "WIFI AP READY");
             if(xEventGroupGetBits(wifi_event_group) & APSTA_BIT) {
                 start_services(false);
                 services.dns = dns_server_start(sta_netif);
@@ -457,12 +437,12 @@ static void wifi_event_handler (void *arg, esp_event_base_t event_base, int32_t 
             break;
 /*??
         case WIFI_EVENT_AP_STOP:
-            protocol_enqueue_rt_command(msg_ap_disconnected);
+            protocol_enqueue_foreground_task(report_plain, "WIFI AP SCAN COMPLETED");
             wifi_stop();
             break;
 */
         case WIFI_EVENT_AP_STACONNECTED:
-            protocol_enqueue_rt_command(msg_ap_connected);
+            protocol_enqueue_foreground_task(report_plain, "WIFI AP CONNECTED");
             if(xEventGroupGetBits(wifi_event_group) & APSTA_BIT) {
                 if(!(xEventGroupGetBits(wifi_event_group) & CONNECTED_BIT)) {
                     /* // screws up dns?
@@ -491,7 +471,7 @@ static void wifi_event_handler (void *arg, esp_event_base_t event_base, int32_t 
             else if(!(xEventGroupGetBits(wifi_event_group) & CONNECTED_BIT))
                 ssdp_stop();
 #endif
-            protocol_enqueue_rt_command(msg_ap_disconnected);
+            protocol_enqueue_foreground_task(report_plain, "WIFI AP DISCONNECTED");
             break;
                 
         case WIFI_EVENT_STA_START:
@@ -507,7 +487,7 @@ static void wifi_event_handler (void *arg, esp_event_base_t event_base, int32_t 
 #if WEBSOCKET_ENABLE
             websocketd_close_connections();
 #endif
-            protocol_enqueue_rt_command(msg_sta_disconnected);
+            protocol_enqueue_foreground_task(report_plain, "WIFI STA DISCONNECTED");
             memset(&wifi_sta_config, 0, sizeof(wifi_config_t));
             esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_sta_config);
             if((xEventGroupGetBits(wifi_event_group) & APSTA_BIT) && !(xEventGroupGetBits(wifi_event_group) & CONNECTED_BIT)) {
@@ -557,7 +537,7 @@ static void wifi_event_handler (void *arg, esp_event_base_t event_base, int32_t 
                 if((ap_list.ap_records = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * ap_list.ap_num)) != NULL)
                     esp_wifi_scan_get_ap_records(&ap_list.ap_num, ap_list.ap_records);
 
-                protocol_enqueue_rt_command(msg_ap_scan_completed);
+                protocol_enqueue_foreground_task(report_plain, "WIFI AP SCAN COMPLETED");
 
                 xSemaphoreGive(aplist_mutex);
             }
@@ -606,12 +586,11 @@ static bool init_adapter (esp_netif_t *netif, network_settings_t *settings)
     return network.ip_mode == IpMode_DHCP;
 }
 
-static wifi_mode_t settingToMode(grbl_wifi_mode_t mode)
+static wifi_mode_t settingToMode (grbl_wifi_mode_t mode)
 {
     return mode == WiFiMode_AP ? WIFI_MODE_AP :
            mode == WiFiMode_STA ? WIFI_MODE_STA :
-           mode == WiFiMode_APSTA ? WIFI_MODE_APSTA :
-           WIFI_MODE_NULL;
+           mode == WiFiMode_APSTA ? WIFI_MODE_APSTA : WIFI_MODE_NULL;
 }
 
 bool wifi_start (void)
@@ -665,6 +644,8 @@ bool wifi_start (void)
         if(ap_netif == NULL)
             ap_netif = esp_netif_create_default_wifi_ap();
 
+        esp_netif_set_hostname(ap_netif, wifi.ap.network.hostname);
+
         esp_netif_dhcps_stop(ap_netif);
 
         wifi.ap.network.ip_mode = IpMode_Static; // Only mode supported
@@ -709,6 +690,8 @@ bool wifi_start (void)
         if(sta_netif == NULL)
             sta_netif = esp_netif_create_default_wifi_sta();
 
+        esp_netif_set_hostname(sta_netif, wifi.sta.network.hostname);
+
         esp_netif_dhcps_stop(sta_netif);
     
         wifi.sta.network.ip_mode = IpMode_DHCP; // For now...
@@ -739,12 +722,6 @@ bool wifi_start (void)
 
     if(esp_wifi_start() != ESP_OK)
         return false;
-
-    if(wifi.mode == WiFiMode_AP || wifi.mode == WiFiMode_APSTA)
-        esp_netif_set_hostname(ap_netif, wifi.ap.network.hostname);
-
-    if(wifi.mode == WiFiMode_STA || wifi.mode == WiFiMode_APSTA)
-        esp_netif_set_hostname(sta_netif, wifi.sta.network.hostname);
 
     if(wifi.mode == WiFiMode_APSTA)
         wifi_ap_scan();

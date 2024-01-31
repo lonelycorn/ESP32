@@ -5,7 +5,7 @@
 
   Part of grblHAL
 
-  Copyright (c) 2020-2023 Terje Io
+  Copyright (c) 2020-2024 Terje Io
 
   Grbl is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -116,7 +116,7 @@
 
 // N/A
 
-#if MODBUS_ENABLE & MODBUS_RTU_ENABLED
+#ifdef ADD_SERIAL2
 #define UART2_RX_PIN            GPIO_NUM_15
 #define UART2_TX_PIN            GPIO_NUM_14
 #if MODBUS_ENABLE & MODBUS_RTU_DIR_ENABLED

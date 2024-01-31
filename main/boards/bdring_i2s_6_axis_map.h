@@ -5,7 +5,7 @@
 
   Part of grblHAL
 
-  Copyright (c) 2020-2023 Terje Io
+  Copyright (c) 2020-2024 Terje Io
 
   Grbl is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,6 +22,10 @@
 */
 
 #define BOARD_NAME "BDRING 6-axis I2S"
+
+#if KEYPAD_ENABLE == 1
+#error No free pins for I2C keypad!
+#endif
 
 #define USE_I2S_OUT
 #define I2S_OUT_PIN_BASE 64
@@ -121,7 +125,7 @@
 #define MOTOR_CS_PIN            I2SO(3)
 #endif
 
-#if MODBUS_ENABLE & MODBUS_RTU_ENABLED
+#ifdef ADD_SERIAL2
 #define UART2_RX_PIN            GPIO_NUM_15
 #define UART2_TX_PIN            GPIO_NUM_14
 #if MODBUS_ENABLE & MODBUS_RTU_DIR_ENABLED
@@ -134,6 +138,3 @@
 #define PROBE_PIN               GPIO_NUM_25
 #endif
 
-#if KEYPAD_ENABLE
-#error No free pins for keypad!
-#endif

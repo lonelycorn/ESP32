@@ -5,7 +5,7 @@
 
   Part of grblHAL
 
-  Copyright (c) 2020-2023 Terje Io
+  Copyright (c) 2020-2024 Terje Io
 
   Grbl is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,6 +23,10 @@
 
 #if N_ABC_MOTORS > 0
 #error "Axis configuration is not supported!"
+#endif
+
+#if KEYPAD_ENABLE == 1
+#error No free pins for I2C keypad!
 #endif
 
 #define BOARD_NAME "BDRING v4"
@@ -59,6 +63,8 @@
 #define SPINDLE_ENABLE_PIN  GPIO_NUM_22
 #endif
 
+#define AUXINPUT0_PIN       GPIO_NUM_35
+
 // Define flood and mist coolant enable output pins.
 
 #define COOLANT_FLOOD_PIN   GPIO_NUM_25
@@ -71,7 +77,7 @@
 #define FEED_HOLD_PIN       GPIO_NUM_36
 #define CYCLE_START_PIN     GPIO_NUM_39
 #if SAFETY_DOOR_ENABLE
-#define SAFETY_DOOR_PIN     GPIO_NUM_35
+#define SAFETY_DOOR_PIN     AUXINPUT0_PIN
 #endif
 
 // Define probe switch input pin.
@@ -89,14 +95,11 @@
 #define PIN_NUM_CS          GPIO_NUM_5
 #endif
 
-#if MODBUS_ENABLE & MODBUS_RTU_ENABLED
+#ifdef ADD_SERIAL2
 #define UART2_RX_PIN            GPIO_NUM_22
 #define UART2_TX_PIN            GPIO_NUM_21
-#if RS485_DIR_ENABLE
+#if MODBUS_ENABLE & MODBUS_RTU_DIR_ENABLED
 #define MODBUS_DIRECTION_PIN    GPIO_NUM_2
 #endif
 #endif
 
-#if KEYPAD_ENABLE
-#error No free pins for keypad!
-#endif

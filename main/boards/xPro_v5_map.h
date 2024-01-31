@@ -25,6 +25,10 @@
 #error "Axis configuration is not supported!"
 #endif
 
+#if KEYPAD_ENABLE == 1
+#error No free pins for I2C keypad!
+#endif
+
 #define BOARD_NAME "x-Pro v5"
 #define HAS_BOARD_INIT
 #if TRINAMIC_ENABLE != 5160
@@ -72,25 +76,22 @@
 #define AUXOUTPUT1_PIN      GPIO_NUM_4
 #endif
 
+#define AUXINPUT0_PIN       GPIO_NUM_13
+#define AUXINPUT1_PIN       GPIO_NUM_0
+
 // Define flood and mist coolant enable output pins.
 // Only one can be enabled!
 
 #define COOLANT_MIST_PIN    GPIO_NUM_21
 //#define COOLANT_FLOOD_PIN   GPIO_NUM_21
 // Define user-control CONTROLs (cycle start, reset, feed hold) input pins.
-#if SAFETY_DOOR_ENABLE
-#define SAFETY_DOOR_PIN     GPIO_NUM_16
-#else
-#define RESET_PIN           GPIO_NUM_16 //??
-#endif
+
+#define RESET_PIN           GPIO_NUM_16
 
 // Define probe switch input pin.
 #if PROBE_ENABLE
 #define PROBE_PIN           GPIO_NUM_22
 #endif
-
-#define AUXINPUT0_PIN       GPIO_NUM_13
-#define AUXINPUT1_PIN       GPIO_NUM_0
 
 // Pin mapping when using SPI mode.
 // With this mapping, SD card can be used both in SPI and 1-line SD mode.
@@ -103,11 +104,7 @@
 #define PIN_NUM_CS          GPIO_NUM_5
 #endif
 
-#if MODBUS_ENABLE & MODBUS_RTU_ENABLED
+#ifdef ADD_SERIAL2
 #define UART2_RX_PIN        GPIO_NUM_25
 #define UART2_TX_PIN        GPIO_NUM_4
-#endif
-
-#if KEYPAD_ENABLE
-#error No free pins for keypad!
 #endif
